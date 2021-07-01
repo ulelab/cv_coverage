@@ -300,29 +300,20 @@ def parallelize(func, sequences, scores, my_int1, my_int2, list_of_strings, my_f
 
 def get_coverage(sequences, scores, window, kmer_length, kmer_list_input, genome, use_scores):
     seq_pos_all_kmer_d = {k1: {k2: 0 for k2 in list(range(-(window + kmer_length), window + kmer_length + 1))} for k1 in kmer_list_input}
-    #print('empty ', seq_pos_all_kmer_d)
     for kmer in kmer_list_input:
         if not use_scores:
             seq_pos = [p for p in [get_positions(s, kmer) for s in sequences]]
-            #print(kmer, 'pos_raw', seq_pos)
             seq_pos = [l for l in seq_pos if len(l) and sum(l) > 0]
-            #print(kmer, 'pos_filtered', seq_pos)
             seq_pos_sum = [sum(i) for i in zip(*seq_pos)]
-            #print(kmer, 'pos_sum', seq_pos_sum)
         else:
             seq_pos = [[scores[i] * p for p in get_positions(s, kmer)] for i, s in enumerate(sequences)]
-            #print(kmer, 'pos_raw', seq_pos)
             seq_pos = [l for l in seq_pos if len(l) and sum(l) > 0]
-            #print(kmer, 'pos_filtered', seq_pos)
             seq_pos_sum = [sum(i) for i in zip(*seq_pos)]
-            #print(kmer, 'pos_sum', seq_pos_sum)
         for j, p in enumerate(seq_pos_sum):
             pos = j - (window + kmer_length)
             if p > 0:
                 seq_pos_all_kmer_d[kmer][pos] += p
     seq_pos_all_kmer = {k: [u for u in v.values()] for k, v in seq_pos_all_kmer_d.items()}
-    # print(seq_pos_all_kmer_d)
-    # print(seq_pos_all_kmer)
     return seq_pos_all_kmer
 
 def combine_results(results):
@@ -451,7 +442,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     print('Results saved')
     sns.set(rc={'figure.figsize':(11.7,8.27)})
     lineplot_kwrgs = {'palette': "tab20", 'linewidth': 1, 'dashes': False, }
-    #print('len_plotlist ', len(plot_list))
     for p in plot_list:
         plt.figure()
         sns_plot = sns.lineplot(data = p.loc[-window + kmer_length: window - kmer_length, :], **lineplot_kwrgs)
@@ -475,7 +465,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
                 bbox_extra_artists=(legend,), 
                 bbox_inches='tight'
             )
-        #plt.show()
         plt.close()
     print('Plots saved')
     remove_tmp = local["rm"]
@@ -484,304 +473,33 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
 
 
 if __name__ == "__main__":
-    import glob
+    import sys
 
-#    run(
-#        ['/home/aram/tempo/martina_review1/hnrnpa2b1-delctd-293flp-sitdp-1-20200812-lg_mapped_to_genome_single.bed.gz'],
-#         [
-#         'GUGUGU',
-#         'UGUGUG',
-#         'UGUGCG',
-#         'UGCGUG',
-#         'CGUGUG',
-#         'GUGUGC'
-#         ],
-#         ['intron'],
-#         6, 
-#         '/home/aram/genomes/GRCh38.p12.genome.fa.masked', 
-#         '/home/aram/genomes/GRCh38.p12.genome.fa.masked.fai', 
-#         '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-#         12,
-#         percentile=False,
-#         window=400,
-#         use_scores=True,
-#         n_cores=10,
-#         chunk_size=100000,
-#         cap=20
-#         )
+    xl_in = sys.args[1].split(',')
+    motifs = sys.args[2].split(',')
+    regions = sys.args[3].split(',')
+    kmer_len = int(sys.args[4])
+    fasta = sys.args[5]
+    fai = sys.args[6]
+    regions_file = sys.args[7]
+    smoothing = int(sys.args[8])
+    percentile = int(sys.args[9])
+    window = int(sys.args[10])
+    use_scores = sys.args[11]
+    n_cores = int(sys.args[12])
+    chunk_size = int(sys.args[13])
+    cap = int(sys.args[14])
 
-    files = glob.glob('/home/aram/data/martina_tdp/post_review_tdp_mutants/group2/*')
-    print(files)
-    for file in files:
-        print(file)
-        run([file],
-            [
-            'GUGUGU',
-            'UGUGUG',
-            'UGUGCG',
-            'UGCGUG',
-            'CGUGUG',
-            'GUGUGC'
-            ],
-            ['intron', 'UTR3'],
-            6, 
-            '/home/aram/genomes/GRCh38.p12.genome.fa', 
-            '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-            '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-            12,
-            percentile=False,
-            window=400,
-            use_scores=True,
-            n_cores=10,
-            chunk_size=100000,
-            cap=20
-            )
-        run([file],
-            [
-            'GUGUGA',
-            'AAUGAA',
-            'GAAUGA',
-            'UGAAUG',
-            'AUGAAU',
-            'GUGAAU',
-            'GAAUGU',
-            'UUGAAU'
-            ],
-            ['intron', 'UTR3'],
-            6, 
-            '/home/aram/genomes/GRCh38.p12.genome.fa', 
-            '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-            '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-            12,
-            percentile=False,
-            window=400,
-            use_scores=True,
-            n_cores=10,
-            chunk_size=100000,
-            cap=20
-            )
-        run([file],
-            [
-            'AUGUGU',
-            'GUAUGU',
-            'GUGUAU',
-            'UGUGUA',
-            'UGUAUG',
-            'UGCAUG'
-            ],
-            ['intron', 'UTR3'],
-            6, 
-            '/home/aram/genomes/GRCh38.p12.genome.fa', 
-            '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-            '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-            12,
-            percentile=False,
-            window=400,
-            use_scores=True,
-            n_cores=10,
-            chunk_size=100000,
-            cap=20
-            )
-        run([file],
-            [
-            'AGGAAG',
-            'GGAAGA',
-            'GGAAGC',
-            'GGAAGG',
-            'AAGGAA',
-            'AAGGGA',
-            'CAGGAA',
-            'CAGGGA',
-            'GAGGAA',
-            'UAGGAA',
-            'UAGGGA',
-            'GAAGGA',
-            'GAAGGG',
-            'AGGCAG',
-            'AGGGAG',
-            'AGGCAG'
-            ],
-            ['intron', 'UTR3'],
-            6, 
-            '/home/aram/genomes/GRCh38.p12.genome.fa', 
-            '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-            '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-            12,
-            percentile=False,
-            window=400,
-            use_scores=True,
-            n_cores=10,
-            chunk_size=100000,
-            cap=20
-            )
+    if percentile.strip() == 'None':
+        percentile = None
+    else:
+        percentile = int(percentile)
 
-    # run(
-    # [
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1_trimmed_single.bed.gz'
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz'
-    # # '/home/aram/dev/multiprocessing/test_4xl.bed'
-    # ],
-    # [
-    #  'GUGUGU',
-    #  'UGUGUG',
-    #  'UGUGCG',
-    #  'UGCGUG',
-    #  'CGUGUG',
-    #  'GUGUGC'
+    if use_scores.strip() == 'True':
+        use_scores = True
+    else:
+        use_scores = False
 
-    # # 'GUGUGA',
-    # # 'AAUGAA',
-    # # 'GAAUGA',
-    # # 'UGAAUG',
-    # # 'AUGAAU',
-    # # 'GUGAAU',
-    # # 'GAAUGU',
-    # # 'UUGAAU'
+    run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile=None, 
+        window=150, use_scores=False, n_cores=4, chunk_size=100000, cap=0)
 
-    # # 'AUGUGU',
-    # # 'GUAUGU',
-    # # 'GUGUAU',
-    # # 'UGUGUA',
-    # # 'UGUAUG',
-    # # 'UGCAUG',
-
-    # ],
-    # ['UTR3'],
-    # 6, 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa', 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-    # '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-    # 12,
-    # percentile=False,
-    # window=400,
-    # use_scores=True,
-    # n_cores=10,
-    # chunk_size=100000
-    # )
-
-    # run(
-    # [
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1_trimmed_single.bed.gz'
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    # #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz'
-    # # '/home/aram/dev/multiprocessing/test_4xl.bed'
-    # ],
-    # [
-    # #  'GUGUGU',
-    # #  'UGUGUG',
-    # #  'UGUGCG',
-    # #  'UGCGUG',
-    # #  'CGUGUG',
-    # #  'GUGUGC'
-
-    # 'GUGUGA',
-    # 'AAUGAA',
-    # 'GAAUGA',
-    # 'UGAAUG',
-    # 'AUGAAU',
-    # 'GUGAAU',
-    # 'GAAUGU',
-    # 'UUGAAU'
-
-    # # 'AUGUGU',
-    # # 'GUAUGU',
-    # # 'GUGUAU',
-    # # 'UGUGUA',
-    # # 'UGUAUG',
-    # # 'UGCAUG',
-    # ],
-    # ['UTR3'],
-    # 6, 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa', 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-    # '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-    # 12,
-    # percentile=False,
-    # window=400,
-    # use_scores=True,
-    # n_cores=10,
-    # chunk_size=100000
-    # )
-
-    # run(
-    # [
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-lct-20151220-ju1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-gfphnrnpa2-trunc-20151220-ju1-1_trimmed_single.bed.gz',
-    #  '/home/aram/tempo/klara/hnrnpa2/raw_samples/chosen_samples/hnrnpa2b1-293flp-sictrl-20151023-ju1_trimmed_single.bed.gz'
-    #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-316del346-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz',
-    #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l1-20171010-ju_trimmed_single.bed.gz',
-    #  '/home/aram/data/martina_tdp/second_big_heatmap/tardbp-egfp-293flp-l2-20171010-ju_trimmed_single.bed.gz'
-    # '/home/aram/dev/multiprocessing/test_4xl.bed'
-    # ],
-    # [
-    #  'GUGUGU',
-    #  'UGUGUG',
-    #  'UGUGCG',
-    #  'UGCGUG',
-    #  'CGUGUG',
-    #  'GUGUGC'
-
-    # 'GUGUGA',
-    # 'AAUGAA',
-    # 'GAAUGA',
-    # 'UGAAUG',
-    # 'AUGAAU',
-    # 'GUGAAU',
-    # 'GAAUGU',
-    # 'UUGAAU'
-
-    # 'AUGUGU',
-    # 'GUAUGU',
-    # 'GUGUAU',
-    # 'UGUGUA',
-    # 'UGUAUG',
-    # 'UGCAUG',
-
-    # 'AGGAAG',
-    # 'GGAAGA',
-    # 'GGAAGC',
-    # 'GGAAGG',
-    # 'AAGGAA',
-    # 'AAGGGA',
-    # 'CAGGAA',
-    # 'CAGGGA',
-    # 'GAGGAA',
-    # 'UAGGAA',
-    # 'UAGGGA',
-    # 'GAAGGA',
-    # 'GAAGGG',
-    # 'AGGCAG',
-    # 'AGGGAG',
-    # 'AGGCAG'
-    # ],
-    # ['intron', 'UTR3'],
-    # 6, 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa', 
-    # '/home/aram/genomes/GRCh38.p12.genome.fa.fai', 
-    # '/home/aram/genomes/regions_GENCODE_v30.gtf.gz',
-    # 12,
-    # percentile=False,
-    # window=400,
-    # use_scores=True,
-    # n_cores=10,
-    # chunk_size=100000
-    # )

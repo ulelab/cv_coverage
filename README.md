@@ -8,6 +8,8 @@ python=3.7
 pandas=1.2.3  
 numpy=1.19.2  
 pybedtools=0.8.1  
+plumbum=1.6.9
+seaborn=0.11.0
 ```
 **Usage**:  
   ```
@@ -21,13 +23,13 @@ pybedtools=0.8.1
   `kmer_len` *the length of analysed motifs (in bases);*  
   `fasta` *is the path to the genome in fasta format;*  
   `fai` *is the path to the genome index file;*  
-  `regions_file` *if a segmentation file in GTF format, usualy obtained with iCount segment but can also come from   other sources;*
-  `smoothing` *is the size of smoothing window, usually 12;*
-  `percentile` *defines the percentile for thresholding genomic landmarks by score, if None no thresholding is used and all landmarks will be used for the analisys;*
-  `window` *flanking distance around the landmarks that is analysed and displayed;*
-  `use_scores` *If True score will be used for calculation else all landmarks will have equal weigths of 1;*
-  `n_cores` *is the number of threads used in the process;*  
-  `chunk_size` *is the number of rows per thread (10000 is the usual value);*
+  `regions_file` *if a segmentation file in GTF format, usualy obtained with iCount segment but can also come from   other sources;*  
+  `smoothing` *is the size of smoothing window, usually 12;*  
+  `percentile` *defines the percentile for thresholding genomic landmarks by score, if None no thresholding is used and all landmarks will be used for the analisys;*  
+  `window` *flanking distance around the landmarks that is analysed and displayed;*  
+  `use_scores` *If True score will be used for calculation else all landmarks will have equal weigths of 1;*  
+  `n_cores` *is the number of threads used in the process;*   
+  `chunk_size` *is the number of rows per thread (10000 is the usual value);*  
   `cap` *is the max value for any landmarks score. It is only used if use_scores is set to True;*
 
   
