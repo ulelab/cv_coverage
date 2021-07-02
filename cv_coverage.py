@@ -22,16 +22,14 @@ import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pybedtools as pbt
 from random import randint
 from plumbum import local
 from itertools import islice
 from multiprocessing import  Pool
-
 import matplotlib
+matplotlib.use('Agg')
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
