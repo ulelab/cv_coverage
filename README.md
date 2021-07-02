@@ -9,6 +9,7 @@ pandas=1.2.3
 numpy=1.19.2  
 pybedtools=0.8.1  
 plumbum=1.6.9
+matplotlib=3.2.2
 seaborn=0.11.0
 ```
 **Usage**:  
