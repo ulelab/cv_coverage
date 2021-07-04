@@ -2,7 +2,7 @@
 Author: aram.amalietti@gmail.com
 
 
-**Dependencies** (these are the versions the script was developped with, newer versions should work, but if they don't, please use these versions):
+**Dependencies** (these are the versions the script was developped with, pandas >= 1 introduced breaking changes, please use these versions):
 ```
 python=3.7.7  
 pandas=0.24.2  
