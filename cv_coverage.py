@@ -445,9 +445,7 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     print('Results saved')
     sns.set(rc={'figure.figsize':(11.7,8.27)})
     lineplot_kwrgs = {'palette': "tab20", 'linewidth': 1, 'dashes': False, }
-    print(index)
     for p in plot_list:
-        print(p)
         p = p.set_index(index)
         plt.figure()
         sns_plot = sns.lineplot(data = p.loc[-window + kmer_length: window - kmer_length, :], **lineplot_kwrgs)
