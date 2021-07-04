@@ -32,6 +32,8 @@ seaborn=0.11.0
   `chunk_size` *is the number of rows per thread (10000 is the usual value);*  
   `cap` *is the max value for any landmarks score. It is only used if use_scores is set to True;*
 
+  The script need writing permission in the staging directory to make `results` directory and environment variable `TMPDIR` for temporary files. If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
+
   
 
 

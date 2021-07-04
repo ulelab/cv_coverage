@@ -121,9 +121,9 @@ def get_regions_map(regions_file):
     df_cds_utr_ncrna = filter_cds_utr_ncrna(df_cds_utr_ncrna)
     df_intron = filter_intron(df_intron, 100)
     to_csv_kwrgs = {'sep': '\t', 'header': None, 'index': None}
-    df_intron.to_csv('{}intron_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
-    df_intergenic.to_csv('{}intergenic_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
-    df_cds_utr_ncrna.to_csv('{}cds_utr_ncrna_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
+    df_intron.to_csv('{}/intron_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
+    df_intergenic.to_csv('{}/intergenic_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
+    df_cds_utr_ncrna.to_csv('{}/cds_utr_ncrna_regions.bed'.format(TEMP_PATH), **to_csv_kwrgs)
 
 def get_sequences(sites, fasta, fai, window_l, window_r, merge_overlaps=False):
     """Get genome sequences around positions defined in sites."""
@@ -291,7 +291,6 @@ def get_positions(s, kmer):
         indices_extended.extend(range(i, (i + len(kmer))))
     position = [1 if x in set(indices_extended) else 0 for x in range(len(s))]
     # number of positions is summed up into score for the current window
-    #sequence_positions[p] = position
     # score of the window with max score is returned, called h_max
     return position
 
@@ -352,21 +351,18 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     global TEMP_PATH
     TEMP_PATH = os.environ['TMPDIR']
     os.makedirs('./results/', exist_ok=True)
-
     kmer_list_input = [kmer.replace('U', 'T') for kmer in kmer_list_input]
     txn_dict = {x: {y: 0 for y in region_list_input} for x in [get_name(s) for s in sites_files_paths_list]}
-
     df_out = pd.DataFrame()
-
     for sites_file in sites_files_paths_list:
         print(f'Analysing: {sites_file}')
         sample_name = get_name(sites_file)
         get_regions_map(regions_file)
         global REGIONS_MAP
         REGIONS_MAP = {
-            'intron': '{}intron_regions.bed'.format(TEMP_PATH),
-            'intergenic': '{}intergenic_regions.bed'.format(TEMP_PATH),
-            'cds_utr_ncrna': '{}cds_utr_ncrna_regions.bed'.format(TEMP_PATH)
+            'intron': '{}/intron_regions.bed'.format(TEMP_PATH),
+            'intergenic': '{}/intergenic_regions.bed'.format(TEMP_PATH),
+            'cds_utr_ncrna': '{}/cds_utr_ncrna_regions.bed'.format(TEMP_PATH)
         }
         if percentile:
             print('Getting thresholded crosslinks')
@@ -396,7 +392,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
                 sites = pbt.BedTool.from_dataframe(chunk[['chrom', 'start', 'end', 'name', 'score', 'strand']])
                 sequences = get_sequences(sites, genome, genome_fai, window + kmer_length, window + kmer_length)
                 assert len(sequences) == len(scores_chunk[i])
-                                           #func, sequences, scores,            my_int1, my_int2,    list_of_strings, my_file, use_scores, n_cores
                 results = parallelize(get_coverage, sequences, scores_chunk[i], window, kmer_length, kmer_list_input, use_scores, n_cores)
                 results_chunks.append(combine_results(results))
             combined_results = combine_results(results_chunks)
@@ -440,7 +435,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     # save a tsv file used for plotting, which contains average counts of kmers of interest for each position
     kmer_list_name = [kmer.replace('T', 'U') for kmer in kmer_list_input]
     outfile_name = "_".join(kmer_list_name[:4])
-    #df_out = df_out * 100
     for region in region_list_input:
         df_out[[x for x in df_out.columns if region in x]].to_csv(
             f'./results/{sample_name}_{region}_{cap}_{outfile_name}.tsv',
@@ -479,9 +473,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             )
         plt.close()
     print('Plots saved')
-    # remove_tmp = local["rm"]
-    # remove_tmp("-rf", TEMP_PATH)
-    # print('Temporary files removed')
 
 
 if __name__ == "__main__":
