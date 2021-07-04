@@ -4,12 +4,11 @@ Author: aram.amalietti@gmail.com
 
 **Dependencies** (these are the versions the script was developped with, newer versions should work, but if they don't, please use these versions):
 ```
-python=3.7  
-pandas=1.2.3  
+python=3.7.7  
+pandas=0.24.2  
 numpy=1.19.2  
 pybedtools=0.8.1  
-plumbum=1.6.9
-matplotlib=3.2.2
+matplotlib=3.3.2
 seaborn=0.11.0
 ```
 **Usage**:  

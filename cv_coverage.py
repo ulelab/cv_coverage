@@ -25,7 +25,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pybedtools as pbt
 from random import randint
-from plumbum import local
+#from plumbum import local
 from itertools import islice
 from multiprocessing import  Pool
 import matplotlib
@@ -133,27 +133,6 @@ def get_sequences(sites, fasta, fai, window_l, window_r, merge_overlaps=False):
         sites_extended = sites_extended.merge(s=True)
     seq_tab = sites_extended.sequence(s=True, fi=fasta, tab=True)
     return [line.split("\t")[1].strip() for line in open(seq_tab.seqfn)]
-
-
-def get_positions(s, kmer):
-    def find_all(a_str, sub):
-        """find indices of the substring in a string"""
-        start = 0
-        while True:
-            start = a_str.find(sub, start)
-            if start == -1: return
-            yield start
-            start += 1
-    # for each sliding window we find which positions fit into each motif
-    indices_extended = []
-    indices = list(find_all(s, kmer))
-    for i in indices:
-        indices_extended.extend(range(i, (i + len(kmer))))
-    position = [1 if x in set(indices_extended) else 0 for x in range(len(s))]
-    # number of positions is summed up into score for the current window
-    #sequence_positions[p] = position
-    # score of the window with max score is returned, called h_max
-    return position
 
 
 def intersect(interval_file, s_file):
@@ -285,18 +264,39 @@ def get_all_sites(s_file):
     return df_out.sort_values(by=['chrom', 'start', 'strand'], ascending=[True, True, True]).reset_index(drop=True)
 
 
-def parallelize(func, sequences, scores, my_int1, my_int2, list_of_strings, my_file, use_scores, n_cores):
+def parallelize(func, sequences, scores, my_int1, my_int2, list_of_strings, use_scores, n_cores):
     split_seqs = [sequences[i::n_cores] for i in range(n_cores)]
     split_scores = [scores[i::n_cores] for i in range(n_cores)]
     pool = Pool(n_cores)
-    iterable_args = [(split_seq, split_scores[i], my_int1, my_int2, list_of_strings, my_file, use_scores) for i, split_seq in enumerate(split_seqs)]
+    iterable_args = [(split_seq, split_scores[i], my_int1, my_int2, list_of_strings, use_scores) for i, split_seq in enumerate(split_seqs)]
     results = pool.starmap(func, iterable_args)
     pool.close()
     pool.join()
     return results
 
 
-def get_coverage(sequences, scores, window, kmer_length, kmer_list_input, genome, use_scores):
+def get_positions(s, kmer):
+    def find_all(a_str, sub):
+        """find indices of the substring in a string"""
+        start = 0
+        while True:
+            start = a_str.find(sub, start)
+            if start == -1: return
+            yield start
+            start += 1
+    # for each sliding window we find which positions fit into each motif
+    indices_extended = []
+    indices = list(find_all(s, kmer))
+    for i in indices:
+        indices_extended.extend(range(i, (i + len(kmer))))
+    position = [1 if x in set(indices_extended) else 0 for x in range(len(s))]
+    # number of positions is summed up into score for the current window
+    #sequence_positions[p] = position
+    # score of the window with max score is returned, called h_max
+    return position
+
+
+def get_coverage_old(sequences, scores, window, kmer_length, kmer_list_input, use_scores):
     seq_pos_all_kmer_d = {k1: {k2: 0 for k2 in list(range(-(window + kmer_length), window + kmer_length + 1))} for k1 in kmer_list_input}
     for kmer in kmer_list_input:
         if not use_scores:
@@ -314,7 +314,31 @@ def get_coverage(sequences, scores, window, kmer_length, kmer_list_input, genome
     seq_pos_all_kmer = {k: [u for u in v.values()] for k, v in seq_pos_all_kmer_d.items()}
     return seq_pos_all_kmer
 
+
+def get_coverage(sequences, scores, window, kmer_length, kmer_list_input, use_scores):
+    seq_pos_all = {k: 0 for k in list(range(-(window + kmer_length), window + kmer_length + 1))}
+    for j, s in enumerate(sequences):
+        seq_pos = [p for p in [get_positions(s, kmer) for kmer in kmer_list_input]]
+        if not use_scores:
+            seq_pos = [l for l in seq_pos if len(l) and sum(l) > 0]
+            seq_pos_sum = [int(bool(sum(i))) for i in zip(*seq_pos)]
+        else:
+            seq_pos_sum = [int(bool(sum(i))) * scores[j] for i in zip(*seq_pos)]
+        for j, p in enumerate(seq_pos_sum):
+            pos = j - (window + kmer_length)
+            if p > 0:
+                seq_pos_all[pos] += p
+    return seq_pos_all
+
 def combine_results(results):
+    combined_results = {k: 0 for k in results[0].keys()}
+    for result in results:
+        for k, v in result.items():
+            combined_results[k] += v
+    return combined_results
+
+
+def combine_results_old(results):
     combined_results = {k: [] for k in results[0].keys()}
     for result in results:
         for k, v in result.items():
@@ -326,9 +350,7 @@ def run(sites_files_paths_list, kmer_list_input, region_list_input, kmer_length,
 regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, chunk_size=100000, cap=0):
     """Run the script"""
     global TEMP_PATH
-    TEMP_PATH = './TEMP{}/'.format(randint(10 ** 6, 10 ** 7))
-    make_temp = local["mkdir"]
-    make_temp(TEMP_PATH)
+    TEMP_PATH = os.environ['TMPDIR']
     os.makedirs('./results/', exist_ok=True)
 
     kmer_list_input = [kmer.replace('U', 'T') for kmer in kmer_list_input]
@@ -368,18 +390,14 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             scores = df_sites.score.values.astype(float)
             n = len(df_sites) // chunk_size + 1
             sites_chunks = np.array_split(df_sites, n)
-            #print(sites_chunks)
             scores_chunk = np.array_split(scores, n)
-            #print(scores_chunk)
             results_chunks = []
             for i, chunk in enumerate(sites_chunks):
                 sites = pbt.BedTool.from_dataframe(chunk[['chrom', 'start', 'end', 'name', 'score', 'strand']])
-                #print(sites)
                 sequences = get_sequences(sites, genome, genome_fai, window + kmer_length, window + kmer_length)
-                # for s in sequences:
-                #     print(s)
                 assert len(sequences) == len(scores_chunk[i])
-                results = parallelize(get_coverage, sequences, scores_chunk[i], window, kmer_length, kmer_list_input, genome, use_scores, n_cores)
+                                           #func, sequences, scores,            my_int1, my_int2,    list_of_strings, my_file, use_scores, n_cores
+                results = parallelize(get_coverage, sequences, scores_chunk[i], window, kmer_length, kmer_list_input, use_scores, n_cores)
                 results_chunks.append(combine_results(results))
             combined_results = combine_results(results_chunks)
             if use_scores:
@@ -387,26 +405,19 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             else:
                 total = len(df_sites)
             print('total ', total)
-            seq_pos_all_kmer = {k: [u / total for u in v] for k, v in combined_results.items()}
-            test_df = pd.DataFrame.from_dict(seq_pos_all_kmer)
-            df_concat = pd.DataFrame()
-            for kmer in kmer_list_input:
-                df_temp = test_df[kmer].T
-                df_concat = pd.concat([df_concat, df_temp], axis=1)
-            df_concat = df_concat.T
-            df_concat.rename(columns=(lambda x: x - window - kmer_length), inplace=True)
+            seq_pos_all_kmer = {k: [v / total] for k, v in combined_results.items()}
+            test_df = pd.DataFrame.from_dict(seq_pos_all_kmer).T
+            index = pd.Index(test_df.index)
             # define name of column
             mean_col = '{}_{}'.format(sample_name, region)
             # calculate average of kmers of interest for each position and save results in new column
             # copy the column of average counts to dataframe used for plotting
-            df_out[mean_col] = df_concat.sum()
-            # smoothen
-            df_smooth = df_out.rolling(smoot, center=True, win_type='triang').mean()
-            # slicing drops edge values that get NaN due to rolling mean
-            df_smooth = df_smooth.iloc[int(smoot / 2): -(int(smoot / 2) + 1), :]
-            df_smooth = df_smooth * 100
+            df_out[mean_col] = test_df.T.values[0]
             pbt.cleanup()
             print(f'{region} Finished')
+    df_smooth = df_out.rolling(smoot, center=True, win_type='triang').mean()
+    # slicing drops edge values that get NaN due to rolling mean
+    df_smooth = df_smooth * 100
     print('All selected regions finished')
     # different cases of plotting the data, depending on how many plots need to be generated
     plot_list = []
@@ -440,7 +451,10 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     print('Results saved')
     sns.set(rc={'figure.figsize':(11.7,8.27)})
     lineplot_kwrgs = {'palette': "tab20", 'linewidth': 1, 'dashes': False, }
+    print(index)
     for p in plot_list:
+        print(p)
+        p = p.set_index(index)
         plt.figure()
         sns_plot = sns.lineplot(data = p.loc[-window + kmer_length: window - kmer_length, :], **lineplot_kwrgs)
         plt.ylim(bottom=0)
@@ -465,28 +479,28 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             )
         plt.close()
     print('Plots saved')
-    remove_tmp = local["rm"]
-    remove_tmp("-rf", TEMP_PATH)
-    print('Temporary files removed')
+    # remove_tmp = local["rm"]
+    # remove_tmp("-rf", TEMP_PATH)
+    # print('Temporary files removed')
 
 
 if __name__ == "__main__":
     import sys
 
-    xl_in = sys.args[1].split(',')
-    motifs = sys.args[2].split(',')
-    regions = sys.args[3].split(',')
-    kmer_len = int(sys.args[4])
-    fasta = sys.args[5]
-    fai = sys.args[6]
-    regions_file = sys.args[7]
-    smoothing = int(sys.args[8])
-    percentile = int(sys.args[9])
-    window = int(sys.args[10])
-    use_scores = sys.args[11]
-    n_cores = int(sys.args[12])
-    chunk_size = int(sys.args[13])
-    cap = int(sys.args[14])
+    xl_in = sys.argv[1].split(',')
+    motifs = sys.argv[2].split(',')
+    regions = sys.argv[3].split(',')
+    kmer_len = int(sys.argv[4])
+    fasta = sys.argv[5]
+    fai = sys.argv[6]
+    regions_file = sys.argv[7]
+    smoothing = int(sys.argv[8])
+    percentile = 'None' if 'None' else int(sys.argv[9]) 
+    window = int(sys.argv[10])
+    use_scores = sys.argv[11]
+    n_cores = int(sys.argv[12])
+    chunk_size = int(sys.argv[13])
+    cap = int(sys.argv[14])
 
     if percentile.strip() == 'None':
         percentile = None
@@ -498,6 +512,28 @@ if __name__ == "__main__":
     else:
         use_scores = False
 
+    # print(xl_in)
+    # print(motifs)
+    # print(regions)
+    # print(kmer_len)
+    # print(fasta)
+    # print(fai)
+    # print(regions_file)
+    # print(smoothing)
+    # print(percentile)
+    # print(window)
+    # print(use_scores)
+    # print(n_cores)
+    # print(chunk_size)
+    # print(cap)
+
     run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile=None, 
-        window=150, use_scores=False, n_cores=4, chunk_size=100000, cap=0)
+        window=150, use_scores=False, n_cores=4, chunk_size=10000, cap=0)
+
+
+
+
+
+
+
 
