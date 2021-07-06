@@ -516,8 +516,8 @@ if __name__ == "__main__":
     # print(chunk_size)
     # print(cap)
 
-    run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile=None, 
-        window=150, use_scores=False, n_cores=4, chunk_size=10000, cap=0)
+    run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile, 
+        window, use_scores, n_cores, chunk_size, cap)
 
 
 
