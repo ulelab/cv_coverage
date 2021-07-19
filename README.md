@@ -1,5 +1,5 @@
 ## cv_coverage
-This code compares the coverages of a k-mer group around crosslink events across multiple CLIP datasets. The comparison is conducted within user-specified genomic regions. 
+This code compares the coverages of a k-mer group around crosslink events (landmarks) across multiple CLIP datasets. The comparison is conducted within user-specified genomic regions. 
 
 Author: aram.amalietti@gmail.com
 
@@ -36,5 +36,9 @@ seaborn=0.11.0
  **Common issues**
 
  The script needs writing permission in the staging directory to make `results` directory and environment variable `TMPDIR` for temporary files. If you get `KeyError: 'TMPDIR'` a solution would be to type `export TMPDIR=<path_to_folder>` in terminal where you want to run the script.
-
-  
+ 
+ **Outputs**
+ - A pdf file with graphs showing % k-mer group coverage around landmarks for each analyzed CLIP dataset;
+ - A tsv file with % coverage values (raw values used for plotting);
+ - A text file that saves the number of analyzed landmarks in each sample;
+ - A tsv file with saved run parameters.
