@@ -435,6 +435,9 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
     # save a tsv file used for plotting, which contains average counts of kmers of interest for each position
     kmer_list_name = [kmer.replace('T', 'U') for kmer in kmer_list_input]
     outfile_name = "_".join(kmer_list_name[:4])
+    print('DF OUT NO INDEX:', df_out.head())
+    df_out.set_index(index, inplace=True)
+    print('INDEX ADDED?', df_out.head())
     for region in region_list_input:
         df_out[[x for x in df_out.columns if region in x]].to_csv(
             f'./results/{sample_name}_{region}_{cap}_{outfile_name}.tsv',
