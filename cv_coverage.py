@@ -364,6 +364,23 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             'intergenic': '{}/intergenic_regions.bed'.format(TEMP_PATH),
             'cds_utr_ncrna': '{}/cds_utr_ncrna_regions.bed'.format(TEMP_PATH)
         }
+        df_params = pd.Series(data={"file_list": sites_files_paths_list, 
+                                "kmer_list": kmer_list_input, 
+                                "regions": region_list_input, 
+                                "kmer_length": kmer_length, 
+                                "genome": genome, 
+                                "genome_index_file": genome_fai, 
+                                "gtf_segmentation_file": regions_file,
+                                "smoothing": smoot, 
+                                "percentile": percentile, 
+                                "window": window, 
+                                "use_scores": use_scores, 
+                                "n_cores": n_cores, 
+                                "chunk_size": chunk_size, 
+                                "cap" : cap, 
+                                })
+        df_params.to_csv(f'./results/run_parameters.tsv', sep='\t', header=False)
+
         if percentile:
             print('Getting thresholded crosslinks')
             df_txn = get_threshold_sites(sites_file, percentile=percentile)
