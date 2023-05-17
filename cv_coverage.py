@@ -25,7 +25,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pybedtools as pbt
 from random import randint
-#from plumbum import local
 from itertools import islice
 from multiprocessing import  Pool
 import matplotlib
@@ -502,7 +501,7 @@ if __name__ == "__main__":
     fai = sys.argv[6]
     regions_file = sys.argv[7]
     smoothing = int(sys.argv[8])
-    percentile = 'None' if 'None' else int(sys.argv[9]) 
+    percentile = 'None' if 'None' else int(sys.argv[9])
     window = int(sys.argv[10])
     use_scores = sys.argv[11]
     n_cores = int(sys.argv[12])
@@ -519,22 +518,7 @@ if __name__ == "__main__":
     else:
         use_scores = False
 
-    # print(xl_in)
-    # print(motifs)
-    # print(regions)
-    # print(kmer_len)
-    # print(fasta)
-    # print(fai)
-    # print(regions_file)
-    # print(smoothing)
-    # print(percentile)
-    # print(window)
-    # print(use_scores)
-    # print(n_cores)
-    # print(chunk_size)
-    # print(cap)
-
-    run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile, 
+    run(xl_in, motifs, regions, kmer_len, fasta, fai, regions_file, smoothing, percentile,
         window, use_scores, n_cores, chunk_size, cap)
 
 
