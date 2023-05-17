@@ -416,7 +416,16 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
 
         for region in region_list_input:
             # Parse sites file and keep only parts that intersect with given region
-            df_sites = df_txn.loc[df_txn['feature'].isin(REGION_SITES[region])]
+            # for organisms which don't have introns, this will allow whole_gene analysis.
+            regs_list = [r for r in REGION_SITES[region] if r in df_txn['feature'].unique().tolist()]
+            if len(regs_list) >= 1:
+                print(region, 'is represented by these annotated features:', regs_list)
+            else:
+                print(f'features corresponding to {region} were not found in regions gtf file.')
+                # if this is the case remove this region from input
+                region_list_input = [r for r in region_list_input if r!=region]
+                continue
+            df_sites = df_txn.loc[df_txn['feature'].isin(regs_list)]
             if percentile:
                 print(f'{len(df_sites)} thresholded sites on {region}')
             else:
@@ -465,7 +474,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
         plot_list.append(df_plot)
     # if there is more then one file and region we plot different files together for each region
     elif (len(sites_files_paths_list) > 1) and (len(region_list_input) > 1):
-        #plots_list = []
         for r in region_list_input:
             columns = [x for  x in df_smooth.columns if r in x]
             df_plot = df_smooth[columns]
