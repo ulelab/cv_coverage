@@ -1,10 +1,10 @@
-cff-version: 1.2.0
+cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Amalietti"
   given-names: "Aram Gustav"
 title: "Comparative Visualisation of Average Motif Coverage"
-version: 1.0.0
-doi: 10.5281/zenodo.1234
+version: 1.1.0
+doi: 10.5281/zenodo.8386510
 date-released: 2021-12-05
 url: "https://github.com/ulelab/cv_coverage"
