@@ -244,11 +244,34 @@ def get_threshold_sites(s_file, percentile=0.7):
 
 
 
+# def get_all_sites(s_file):
+#     """Get crosslink data into appropriate dataframe without thresholding."""
+#     df_out = pd.DataFrame(columns=['chrom', 'start', 'end', 'name', 'score', 'strand', 'feature', 'attributes'])
+#     for region in REGIONS_QUANTILE:
+#         df_reg = intersect_merge_info(region, s_file)
+#         if df_reg is None:
+#             return
+#         if df_reg.empty:
+#             continue
+#         if region == 'cds_utr_ncrna':
+#             df_reg.name = df_reg.attributes.map(lambda x: x.split(';')[1].split(' ')[1].strip('"'))
+#             df_reg['quantile'] = None
+#             df_out = pd.concat([df_out, df_reg], ignore_index=True, sort=False)
+#         if region in ['intron', 'intergenic']:
+#             df_region = parse_region_to_df(REGIONS_MAP[region])
+#             df_cut = cut_sites_with_region(df_reg, df_region)
+#             df_filtered = df_cut[['chrom', 'start', 'end', 'name', 'score', 'strand', 'feature', 'attributes']]
+#             df_out = pd.concat([df_out, df_filtered], ignore_index=True, sort=False)
+#     return df_out.sort_values(by=['chrom', 'start', 'strand'], ascending=[True, True, True]).reset_index(drop=True)
+
+
 def get_all_sites(s_file):
     """Get crosslink data into appropriate dataframe without thresholding."""
     df_out = pd.DataFrame(columns=['chrom', 'start', 'end', 'name', 'score', 'strand', 'feature', 'attributes'])
     for region in REGIONS_QUANTILE:
         df_reg = intersect_merge_info(region, s_file)
+        if df_reg is None:
+            continue
         if df_reg.empty:
             continue
         if region == 'cds_utr_ncrna':
@@ -344,7 +367,7 @@ def combine_results_old(results):
     return {k: [sum(i) for i in zip(*v)] for k, v in combined_results.items()}
 
 
-def run(sites_files_paths_list, kmer_list_input, region_list_input, kmer_length, genome, genome_fai, 
+def run(sites_files_paths_list, kmer_list_input, region_list_input, kmer_length, genome, genome_fai,
 regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, chunk_size=100000, cap=0):
     """Run the script"""
     global TEMP_PATH
@@ -363,20 +386,20 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             'intergenic': '{}/intergenic_regions.bed'.format(TEMP_PATH),
             'cds_utr_ncrna': '{}/cds_utr_ncrna_regions.bed'.format(TEMP_PATH)
         }
-        df_params = pd.Series(data={"file_list": sites_files_paths_list, 
-                                "kmer_list": kmer_list_input, 
-                                "regions": region_list_input, 
-                                "kmer_length": kmer_length, 
-                                "genome": genome, 
-                                "genome_index_file": genome_fai, 
+        df_params = pd.Series(data={"file_list": sites_files_paths_list,
+                                "kmer_list": kmer_list_input,
+                                "regions": region_list_input,
+                                "kmer_length": kmer_length,
+                                "genome": genome,
+                                "genome_index_file": genome_fai,
                                 "gtf_segmentation_file": regions_file,
-                                "smoothing": smoot, 
-                                "percentile": percentile, 
-                                "window": window, 
-                                "use_scores": use_scores, 
-                                "n_cores": n_cores, 
-                                "chunk_size": chunk_size, 
-                                "cap" : cap, 
+                                "smoothing": smoot,
+                                "percentile": percentile,
+                                "window": window,
+                                "use_scores": use_scores,
+                                "n_cores": n_cores,
+                                "chunk_size": chunk_size,
+                                "cap" : cap,
                                 })
         df_params.to_csv(f'./results/run_parameters.tsv', sep='\t', header=False)
 
@@ -393,7 +416,16 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
 
         for region in region_list_input:
             # Parse sites file and keep only parts that intersect with given region
-            df_sites = df_txn.loc[df_txn['feature'].isin(REGION_SITES[region])]
+            # for organisms which don't have introns, this will allow whole_gene analysis.
+            regs_list = [r for r in REGION_SITES[region] if r in df_txn['feature'].unique().tolist()]
+            if len(regs_list) >= 1:
+                print(region, 'is represented by these annotated features:', regs_list)
+            else:
+                print(f'features corresponding to {region} were not found in regions gtf file.')
+                # if this is the case remove this region from input
+                region_list_input = [r for r in region_list_input if r!=region]
+                continue
+            df_sites = df_txn.loc[df_txn['feature'].isin(regs_list)]
             if percentile:
                 print(f'{len(df_sites)} thresholded sites on {region}')
             else:
@@ -442,7 +474,6 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
         plot_list.append(df_plot)
     # if there is more then one file and region we plot different files together for each region
     elif (len(sites_files_paths_list) > 1) and (len(region_list_input) > 1):
-        #plots_list = []
         for r in region_list_input:
             columns = [x for  x in df_smooth.columns if r in x]
             df_plot = df_smooth[columns]
@@ -474,16 +505,16 @@ regions_file, smoot, percentile=None, window=150, use_scores=False, n_cores=4, c
             region = p.columns[0].split('_')[-1]
             plt.title('Coverage of {} motif group in {}'.format(outfile_name, region))
             sns_plot.figure.savefig(
-                f'./results/{sample_name}_positional_distribution_cap{cap}_{outfile_name}.pdf', 
-                bbox_extra_artists=(legend,), 
+                f'./results/{sample_name}_positional_distribution_cap{cap}_{outfile_name}.pdf',
+                bbox_extra_artists=(legend,),
                 bbox_inches='tight'
             )
         else:
             region = p.columns[0].split('_')[-1]
             plt.title('Coverage of {} motif group in {}'.format(outfile_name, region))
             sns_plot.figure.savefig(
-                f'./results/{sample_name}_{region}_positional_distribution_cap{cap}_{outfile_name}.pdf', 
-                bbox_extra_artists=(legend,), 
+                f'./results/{sample_name}_{region}_positional_distribution_cap{cap}_{outfile_name}.pdf',
+                bbox_extra_artists=(legend,),
                 bbox_inches='tight'
             )
         plt.close()
