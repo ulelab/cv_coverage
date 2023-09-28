@@ -1,4 +1,6 @@
 ## cv_coverage
+[![DOI](https://zenodo.org/badge/381951979.svg)](https://zenodo.org/badge/latestdoi/381951979)
+
 This code compares the coverages of a k-mer group around crosslink events (landmarks) across multiple CLIP datasets. The comparison is conducted within user-specified genomic regions. 
 
 Author: aram.amalietti@gmail.com
